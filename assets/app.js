@@ -347,28 +347,70 @@ function initDropdowns() {
   const items = $$(".nav-item[data-drop]");
   if (!items.length) return;
 
-  const closeAll = () => items.forEach((it) => it.classList.remove("is-open"));
+  const setExpanded = (it, expanded) => {
+    const btn = $(".nav-link", it);
+    if (btn && btn.tagName === "BUTTON") btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+  };
+
+  const closeAll = () =>
+    items.forEach((it) => {
+      it.classList.remove("is-open");
+      setExpanded(it, false);
+    });
 
   items.forEach((it) => {
     const btn = $(".nav-link", it);
     if (!btn) return;
+    const dropdown = $(".dropdown", it);
+    const focusFirst = () => {
+      const first = dropdown?.querySelector('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      if (first) first.focus();
+    };
+
     const open = () => {
       closeAll();
       it.classList.add("is-open");
+      setExpanded(it, true);
     };
-    const close = () => it.classList.remove("is-open");
 
-    it.addEventListener("pointerenter", open);
-    it.addEventListener("pointerleave", close);
+    const toggle = () => {
+      if (it.classList.contains("is-open")) closeAll();
+      else open();
+    };
+
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      if (it.classList.contains("is-open")) close();
-      else open();
+      toggle();
+    });
+
+    btn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle();
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        open();
+        focusFirst();
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeAll();
+        btn.focus();
+      }
     });
   });
 
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".nav-item[data-drop]")) closeAll();
+  });
+
+  document.addEventListener("focusin", (e) => {
+    if (!e.target.closest(".nav-item[data-drop]")) closeAll();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAll();
   });
 }
 
@@ -496,10 +538,10 @@ function injectShell() {
             <a class="nav-link" href="${BASE}index.html" data-nav>Home</a>
 
             <div class="nav-item" data-drop="services">
-              <button class="nav-link" type="button" aria-haspopup="true" aria-expanded="false">
+              <button class="nav-link" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="servicesDropdown">
                 Services <span class="icon">⌄</span>
               </button>
-              <div class="dropdown" role="menu" aria-label="Services">
+              <div class="dropdown" id="servicesDropdown" role="menu" aria-label="Services">
                 <div class="dropdown-panel">
                   <div class="dropdown-grid">
                     <div class="drop-links">${svcLinks}</div>
@@ -749,6 +791,7 @@ function renderServicesIndex() {
       `
     )
     .join("");
+  initReveal();
 }
 
 function renderProjectsPage() {
