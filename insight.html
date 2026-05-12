@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>Insight — ONE 2 ONE DESIGN</title>
+    <meta name="description" content="Insight by ONE 2 ONE DESIGN." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="icon" href="logo.jpeg" />
+  </head>
+  <body data-page="insight">
+    <a class="skip" href="#content">Skip to content</a>
+    <div class="top-progress" aria-hidden="true"><i></i></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="cursor-light" aria-hidden="true"></div>
+
+    <div class="preloader" id="preloader" role="status" aria-live="polite" aria-label="Loading experience">
+      <div class="preloader-inner">
+        <div class="preloader-top">
+          <div class="preloader-brand">ONE 2 ONE DESIGN</div>
+          <div class="preloader-meta">Loading</div>
+        </div>
+        <div class="preloader-bar" aria-hidden="true"><i id="preloaderBar"></i></div>
+        <div class="preloader-bottom">
+          <div class="preloader-line">Loading post • Aligning typography</div>
+          <div class="preloader-count"><span id="preloaderPct">0</span>%</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="siteHeader"></div>
+
+    <main id="content">
+      <section class="hero" aria-label="Insight hero">
+        <div class="hero-bg" aria-hidden="true">
+          <canvas id="scene"></canvas>
+        </div>
+        <div class="wrap">
+          <div class="hero-grid">
+            <div id="insightBody"></div>
+            <aside class="glass" data-reveal>
+              <div class="in">
+                <div class="kicker"><i></i><span>Explore</span></div>
+                <div class="hero-actions" style="margin-top: 12px">
+                  <a class="btn primary" href="contact.html">Start a project <span class="icon">→</span></a>
+                  <a class="btn" href="insights.html">All insights <span class="icon">↘</span></a>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="siteFooter"></div>
+
+    <script src="assets/content.js" defer></script>
+    <script src="assets/app.js" defer></script>
+  </body>
+</html>

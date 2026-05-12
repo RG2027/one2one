@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>Insights — ONE 2 ONE DESIGN</title>
+    <meta
+      name="description"
+      content="Insights by ONE 2 ONE DESIGN: execution systems, MEP coordination, joinery detailing, and premium fit-out workflows."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="icon" href="logo.jpeg" />
+  </head>
+  <body data-page="insights">
+    <a class="skip" href="#content">Skip to content</a>
+    <div class="top-progress" aria-hidden="true"><i></i></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="cursor-light" aria-hidden="true"></div>
+
+    <div class="preloader" id="preloader" role="status" aria-live="polite" aria-label="Loading experience">
+      <div class="preloader-inner">
+        <div class="preloader-top">
+          <div class="preloader-brand">ONE 2 ONE DESIGN</div>
+          <div class="preloader-meta">Loading</div>
+        </div>
+        <div class="preloader-bar" aria-hidden="true"><i id="preloaderBar"></i></div>
+        <div class="preloader-bottom">
+          <div class="preloader-line">Loading insights • Rendering posts</div>
+          <div class="preloader-count"><span id="preloaderPct">0</span>%</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="siteHeader"></div>
+
+    <main id="content">
+      <section class="hero" aria-label="Insights hero">
+        <div class="hero-bg" aria-hidden="true">
+          <canvas id="scene"></canvas>
+        </div>
+        <div class="wrap">
+          <div class="hero-grid">
+            <div>
+              <div class="kicker" data-reveal><i></i><span>Insights</span></div>
+              <div class="h1 blur-on-scroll" data-reveal>Engineering-level clarity for premium execution.</div>
+              <p class="lead" data-reveal>Short articles to communicate process discipline and craft quality.</p>
+              <div class="hero-actions" data-reveal>
+                <a class="btn primary" href="contact.html">Discuss a project <span class="icon">→</span></a>
+                <a class="btn" href="process.html">Workflow <span class="icon">↗</span></a>
+                <a class="btn ghost" href="projects.html">Projects <span class="icon">↘</span></a>
+              </div>
+            </div>
+            <aside class="glass" data-reveal>
+              <div class="in">
+                <div class="stats">
+                  <div class="stat"><b>MEP</b><span>Coordination</span></div>
+                  <div class="stat"><b>Joinery</b><span>Detailing</span></div>
+                  <div class="stat"><b>Turnkey</b><span>Delivery</span></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="posts">
+        <div class="wrap">
+          <div class="eyebrow">
+            <div>
+              <h2 id="posts" data-reveal>Blog / Insights</h2>
+              <p data-reveal>CMS-ready content cards that can later connect to a backend.</p>
+            </div>
+            <div class="rule" aria-hidden="true"></div>
+          </div>
+          <div class="grid three" id="insightsGrid"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="siteFooter"></div>
+
+    <script src="assets/content.js" defer></script>
+    <script src="assets/app.js" defer></script>
+  </body>
+</html>

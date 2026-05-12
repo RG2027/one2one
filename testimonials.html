@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>Testimonials — ONE 2 ONE DESIGN</title>
+    <meta
+      name="description"
+      content="Testimonials for ONE 2 ONE DESIGN: premium execution, disciplined coordination, and reliable handovers across India."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="icon" href="logo.jpeg" />
+  </head>
+  <body data-page="testimonials">
+    <a class="skip" href="#content">Skip to content</a>
+    <div class="top-progress" aria-hidden="true"><i></i></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="cursor-light" aria-hidden="true"></div>
+
+    <div class="preloader" id="preloader" role="status" aria-live="polite" aria-label="Loading experience">
+      <div class="preloader-inner">
+        <div class="preloader-top">
+          <div class="preloader-brand">ONE 2 ONE DESIGN</div>
+          <div class="preloader-meta">Loading</div>
+        </div>
+        <div class="preloader-bar" aria-hidden="true"><i id="preloaderBar"></i></div>
+        <div class="preloader-bottom">
+          <div class="preloader-line">Loading testimonials • Preparing slider modules</div>
+          <div class="preloader-count"><span id="preloaderPct">0</span>%</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="siteHeader"></div>
+
+    <main id="content">
+      <section class="hero" aria-label="Testimonials hero">
+        <div class="hero-bg" aria-hidden="true">
+          <canvas id="scene"></canvas>
+        </div>
+        <div class="wrap">
+          <div class="hero-grid">
+            <div>
+              <div class="kicker" data-reveal><i></i><span>Testimonials</span></div>
+              <div class="h1 blur-on-scroll" data-reveal>Trust built through delivery.</div>
+              <p class="lead" data-reveal>Client sentiment presented with the same premium clarity as the rest of the platform.</p>
+              <div class="hero-actions" data-reveal>
+                <a class="btn primary" href="contact.html">Request consultation <span class="icon">→</span></a>
+                <a class="btn" href="projects.html">Projects <span class="icon">↘</span></a>
+                <a class="btn ghost" href="services.html">Services <span class="icon">↗</span></a>
+              </div>
+            </div>
+            <aside class="glass" data-reveal>
+              <div class="in">
+                <div class="stats">
+                  <div class="stat"><b>Quality</b><span>Finish control</span></div>
+                  <div class="stat"><b>Speed</b><span>Fast-track delivery</span></div>
+                  <div class="stat"><b>System</b><span>PMO discipline</span></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="tgrid">
+        <div class="wrap">
+          <div class="eyebrow">
+            <div>
+              <h2 id="tgrid" data-reveal>Client Feedback</h2>
+              <p data-reveal>CMS-ready testimonial cards (easy to expand later).</p>
+            </div>
+            <div class="rule" aria-hidden="true"></div>
+          </div>
+          <div class="slider" data-slider>
+            <div class="slider-controls">
+              <button class="btn" type="button" data-prev>Prev <span class="icon">←</span></button>
+              <button class="btn" type="button" data-next>Next <span class="icon">→</span></button>
+            </div>
+            <div class="slider-track" id="testimonialsGrid" aria-label="Testimonial slider"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="siteFooter"></div>
+
+    <script src="assets/content.js" defer></script>
+    <script src="assets/app.js" defer></script>
+  </body>
+</html>
