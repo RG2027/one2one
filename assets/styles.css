@@ -18,13 +18,14 @@
   --radius: 18px;
   --radius2: 28px;
   --blur: 16px;
-  --max: 1220px;
+  --max: 1400px;
   --navH: 78px;
   --scrollP: 0;
   --mx: 50vw;
   --my: 32vh;
   --vel: 0;
   --pageIn: 0;
+  --sceneHue: 44;
 }
 
 * {
@@ -49,6 +50,18 @@ body {
   opacity: var(--pageIn);
   transform: translate3d(0, calc((1 - var(--pageIn)) * 10px), 0);
   transition: opacity 520ms ease, transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(900px 700px at 55% 12%, hsla(var(--sceneHue), 85%, 55%, 0.1), transparent 62%),
+    radial-gradient(900px 700px at 25% 82%, hsla(calc(var(--sceneHue) + 165), 65%, 58%, 0.08), transparent 62%);
+  opacity: 0.95;
+  transition: opacity 360ms ease;
 }
 
 body.is-ready {
@@ -106,7 +119,7 @@ select {
 .wrap {
   width: min(var(--max), 100%);
   margin: 0 auto;
-  padding: 0 18px;
+  padding: 0 clamp(18px, 3vw, 44px);
 }
 
 .top-progress {
@@ -732,6 +745,175 @@ main {
   padding: 82px 0;
 }
 
+.chapters {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.chapters-left {
+  display: grid;
+  gap: 12px;
+}
+
+.chapter {
+  border-radius: var(--radius2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow2);
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+  transition: border-color 320ms ease, background 320ms ease, transform 320ms ease;
+}
+
+.chapter.is-active {
+  border-color: rgba(223, 191, 79, 0.26);
+  background: rgba(255, 255, 255, 0.045);
+  transform: translate3d(0, -2px, 0);
+}
+
+.chapter .in {
+  padding: 16px 16px;
+}
+
+.chapter .top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chapter .top b {
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.chapter .top small {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chapter h3 {
+  margin: 10px 0 8px;
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.chapter p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.75;
+  font-size: 13px;
+}
+
+.chapters-right {
+  position: sticky;
+  top: calc(var(--navH) + 22px);
+}
+
+.chapters-stage {
+  border-radius: var(--radius2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.chapters-stage::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: radial-gradient(520px 320px at 30% 20%, rgba(223, 191, 79, 0.14), transparent 60%),
+    radial-gradient(520px 320px at 70% 80%, rgba(255, 255, 255, 0.08), transparent 62%);
+  opacity: 0.7;
+  filter: blur(18px);
+}
+
+.chapters-media {
+  position: relative;
+  height: clamp(380px, 58vh, 560px);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.chapter-media {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scale(1.02);
+  transition: opacity 420ms ease, transform 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.chapter-media.is-active {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1.02);
+}
+
+.chapter-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.06) contrast(1.04);
+  transform: scale(1.06);
+}
+
+.chapters-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(700px 380px at 55% 20%, rgba(223, 191, 79, 0.14), transparent 62%),
+    linear-gradient(180deg, rgba(7, 8, 10, 0), rgba(7, 8, 10, 0.68));
+}
+
+.chapters-meta {
+  position: relative;
+  padding: 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chapters-progress {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.chapters-progress i {
+  display: block;
+  height: 100%;
+  width: calc(var(--chapP, 0) * 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(223, 191, 79, 0.92), rgba(255, 255, 255, 0.1));
+  box-shadow: 0 0 20px rgba(223, 191, 79, 0.25);
+}
+
+.chapters-hint {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .hero {
   min-height: 100vh;
   padding: calc(var(--navH) + 56px) 0 64px;
@@ -767,7 +949,7 @@ main {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: end;
 }
@@ -1548,8 +1730,24 @@ footer {
   .foot {
     grid-template-columns: 1fr;
   }
+  .chapters {
+    grid-template-columns: 1fr;
+  }
+  .chapters-right {
+    position: relative;
+    top: auto;
+  }
   .tile {
     grid-column: span 6;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --max: 1520px;
+  }
+  .hero-grid {
+    gap: 22px;
   }
 }
 

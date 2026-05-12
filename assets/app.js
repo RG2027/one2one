@@ -9,6 +9,70 @@ function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v));
 }
 
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function normalizePath(p) {
+  if (!p) return "";
+  return p.replace(/^(\.\/)+/g, "").replace(/^(\.\.\/)+/g, "").replace(/^\//, "");
+}
+
+function ensureMeta() {
+  if (!content?.brand) return;
+  const head = document.head;
+
+  const ensureMetaTag = (attr, key, contentValue) => {
+    let el = head.querySelector(`meta[${attr}="${key}"]`);
+    if (!el) {
+      el = document.createElement("meta");
+      el.setAttribute(attr, key);
+      head.appendChild(el);
+    }
+    el.setAttribute("content", contentValue);
+  };
+
+  const ensureLink = (rel, href) => {
+    let el = head.querySelector(`link[rel="${rel}"]`);
+    if (!el) {
+      el = document.createElement("link");
+      el.setAttribute("rel", rel);
+      head.appendChild(el);
+    }
+    el.setAttribute("href", href);
+  };
+
+  const desc = head.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+  const baseUrl = (content.brand.website || "").replace(/\/+$/, "");
+  const path = window.location.pathname.endsWith("/") ? window.location.pathname + "index.html" : window.location.pathname;
+  const canonical = baseUrl ? baseUrl + path : window.location.href;
+
+  const preload = document.body.dataset.preload || "";
+  const ogImage = baseUrl ? baseUrl + "/" + normalizePath(preload || "assets/media/hero.webp") : preload;
+
+  ensureMetaTag("name", "robots", "index,follow,max-image-preview:large");
+  ensureMetaTag("name", "application-name", content.brand.name);
+  ensureMetaTag("name", "author", content.brand.name);
+  ensureMetaTag("name", "referrer", "strict-origin-when-cross-origin");
+  ensureMetaTag("name", "format-detection", "telephone=no");
+  ensureLink("canonical", canonical);
+
+  const page = document.body.dataset.page || "website";
+  const ogType = page === "insight" ? "article" : "website";
+
+  ensureMetaTag("property", "og:site_name", content.brand.name);
+  ensureMetaTag("property", "og:title", document.title);
+  ensureMetaTag("property", "og:description", desc || "ONE 2 ONE DESIGN — luxury interiors and turnkey execution across India.");
+  ensureMetaTag("property", "og:type", ogType);
+  ensureMetaTag("property", "og:url", canonical);
+  ensureMetaTag("property", "og:image", ogImage);
+
+  ensureMetaTag("name", "twitter:card", "summary_large_image");
+  ensureMetaTag("name", "twitter:title", document.title);
+  ensureMetaTag("name", "twitter:description", desc || "ONE 2 ONE DESIGN — luxury interiors and turnkey execution across India.");
+  ensureMetaTag("name", "twitter:image", ogImage);
+}
+
 function formatSqft(areaSqft) {
   if (areaSqft == null) return "—";
   return Number(areaSqft).toLocaleString("en-IN") + " sq.ft.";
@@ -71,6 +135,124 @@ function initVelocityBlur() {
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+}
+
+function initSceneHue() {
+  const nodes = $$("[data-scene-hue]");
+  if (!nodes.length || prefersReduced) return;
+
+  const docStyle = document.documentElement.style;
+  let target = 44;
+  let current = 44;
+
+  function computeTarget() {
+    const cy = window.innerHeight * 0.5;
+    let best = null;
+    let bestDist = Infinity;
+    nodes.forEach((n) => {
+      const r = n.getBoundingClientRect();
+      const center = r.top + r.height * 0.5;
+      const d = Math.abs(center - cy);
+      if (d < bestDist) {
+        bestDist = d;
+        best = n;
+      }
+    });
+    const hue = best ? Number(best.dataset.sceneHue || "44") : 44;
+    if (!Number.isFinite(hue)) return;
+    target = hue;
+  }
+
+  function tick() {
+    current = lerp(current, target, 0.06);
+    docStyle.setProperty("--sceneHue", String(current.toFixed(2)));
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener("scroll", computeTarget, { passive: true });
+  window.addEventListener("resize", computeTarget, { passive: true });
+  computeTarget();
+  requestAnimationFrame(tick);
+}
+
+function initChapters() {
+  const root = $("[data-chapters]");
+  if (!root || prefersReduced) {
+    const items = $$("[data-chapter]", root || document);
+    const media = $$("[data-chapter-media]", root || document);
+    items.forEach((n, i) => n.classList.toggle("is-active", i === 0));
+    media.forEach((n, i) => n.classList.toggle("is-active", i === 0));
+    if (root) root.style.setProperty("--chapP", "0");
+    return;
+  }
+
+  const items = $$("[data-chapter]", root);
+  const media = $$("[data-chapter-media]", root);
+  if (!items.length || items.length !== media.length) return;
+
+  const docStyle = document.documentElement.style;
+  let raf = 0;
+  let inView = false;
+  let currentP = 0;
+  let targetP = 0;
+
+  const setActive = (idx) => {
+    items.forEach((n, i) => n.classList.toggle("is-active", i === idx));
+    media.forEach((n, i) => n.classList.toggle("is-active", i === idx));
+  };
+
+  const updateTarget = () => {
+    const rect = root.getBoundingClientRect();
+    const start = window.scrollY + rect.top;
+    const end = start + rect.height - window.innerHeight;
+    const max = Math.max(1, end - start);
+    const p = clamp((window.scrollY - start) / max, 0, 1);
+    targetP = p;
+    if (!raf && inView) raf = requestAnimationFrame(tick);
+  };
+
+  const tick = () => {
+    raf = 0;
+    currentP = lerp(currentP, targetP, 0.14);
+    root.style.setProperty("--chapP", currentP.toFixed(4));
+    const n = items.length;
+    const s = clamp(currentP * n, 0, n - 0.0001);
+    const idx = Math.floor(s);
+    setActive(idx);
+
+    media.forEach((m, i) => {
+      const d = i - s;
+      const o = clamp(1 - Math.abs(d) * 1.15, 0, 1);
+      const ty = d * 18;
+      const sc = 1.02 + Math.abs(d) * 0.02;
+      m.style.opacity = String(o.toFixed(3));
+      m.style.transform = `translate3d(0, ${ty.toFixed(2)}px, 0) scale(${sc.toFixed(3)})`;
+    });
+
+    const hue = Number(root.dataset.sceneHue || "44");
+    if (Number.isFinite(hue)) docStyle.setProperty("--sceneHue", String(lerp(hue, hue + 12, Math.sin(currentP * Math.PI)).toFixed(2)));
+
+    if (Math.abs(targetP - currentP) > 0.001 && inView) raf = requestAnimationFrame(tick);
+  };
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        inView = e.isIntersecting;
+        if (inView) {
+          updateTarget();
+          if (!raf) raf = requestAnimationFrame(tick);
+        }
+      });
+    },
+    { threshold: 0.1 }
+  );
+  io.observe(root);
+
+  window.addEventListener("scroll", updateTarget, { passive: true });
+  window.addEventListener("resize", updateTarget, { passive: true });
+  updateTarget();
+  setActive(0);
 }
 
 function preloadImages(urls) {
@@ -483,6 +665,14 @@ function initLightbox() {
   }
 
   tiles.forEach((t, i) => t.addEventListener("click", () => show(i)));
+  tiles.forEach((t, i) =>
+    t.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        show(i);
+      }
+    })
+  );
   close.addEventListener("click", hide);
   lb.addEventListener("click", (e) => {
     if (e.target === lb) hide();
@@ -640,6 +830,9 @@ function renderProjectDetails() {
   if (!p) return;
 
   document.title = `${p.title} — ${content.brand.name}`;
+  const d = document.head.querySelector('meta[name="description"]');
+  if (d) d.setAttribute("content", `${p.title} — ${p.category}. ${p.scope}`);
+  ensureMeta();
   const hero = $("#projectHero");
   const body = $("#projectBody");
   if (!hero || !body) return;
@@ -747,6 +940,9 @@ function renderServiceDetails() {
   if (!s) return;
 
   document.title = `${s.title} — ${content.brand.name}`;
+  const d = document.head.querySelector('meta[name="description"]');
+  if (d) d.setAttribute("content", s.summary);
+  ensureMeta();
   const hero = $("#serviceHero");
   const body = $("#serviceBody");
   if (!hero || !body) return;
@@ -949,6 +1145,9 @@ function renderInsightPost() {
   const p = content.insights.find((x) => x.slug === slug);
   if (!p) return;
   document.title = `${p.title} — ${content.brand.name}`;
+  const d = document.head.querySelector('meta[name="description"]');
+  if (d) d.setAttribute("content", p.summary);
+  ensureMeta();
   const root = $("#insightBody");
   if (!root) return;
   const tags = (p.tags || []).map((t) => `<span class="chip">${t}</span>`).join("");
@@ -1113,6 +1312,7 @@ function initScene() {
 }
 
 function boot() {
+  ensureMeta();
   injectShell();
   document.getElementById("year")?.replaceChildren(document.createTextNode(String(new Date().getFullYear())));
   setActiveNav();
@@ -1122,6 +1322,8 @@ function boot() {
   initReveal();
   initPointerLight();
   initVelocityBlur();
+  initSceneHue();
+  initChapters();
   initFloating();
   initTilt();
   initSliders();
