@@ -4,6 +4,7 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const content = window.ONE2ONE_CONTENT;
 const BASE = window.location.pathname.includes("/services/") ? "../" : "";
+const PARALLAX = { items: [], inView: new Map(), speeds: new Map(), io: null, raf: 0, bound: false };
 
 function clamp(v, a, b) {
   return Math.max(a, Math.min(b, v));
@@ -71,6 +72,19 @@ function ensureMeta() {
   ensureMetaTag("name", "twitter:title", document.title);
   ensureMetaTag("name", "twitter:description", desc || "ONE 2 ONE DESIGN — luxury interiors and turnkey execution across India.");
   ensureMetaTag("name", "twitter:image", ogImage);
+}
+
+function ensureJsonLd(id, json) {
+  if (!id || !json) return;
+  const head = document.head;
+  let el = head.querySelector(`script[type="application/ld+json"][data-jsonld="${id}"]`);
+  if (!el) {
+    el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.dataset.jsonld = id;
+    head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(json);
 }
 
 function formatSqft(areaSqft) {
@@ -175,6 +189,56 @@ function initSceneHue() {
   requestAnimationFrame(tick);
 }
 
+function initParallax() {
+  const newItems = $$('[data-parallax]:not([data-parallax-init="1"])');
+  if ((!newItems.length && PARALLAX.bound) || prefersReduced) return;
+
+  newItems.forEach((el) => {
+    el.dataset.parallaxInit = "1";
+    const raw = el.getAttribute("data-parallax");
+    const speed = raw === "" ? 0.14 : Number(raw);
+    PARALLAX.speeds.set(el, Number.isFinite(speed) ? speed : 0.14);
+    PARALLAX.inView.set(el, false);
+    PARALLAX.items.push(el);
+  });
+
+  if (!PARALLAX.io) {
+    PARALLAX.io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => PARALLAX.inView.set(e.target, e.isIntersecting));
+      },
+      { rootMargin: "220px 0px 220px 0px", threshold: 0.01 }
+    );
+  }
+  newItems.forEach((el) => PARALLAX.io.observe(el));
+
+  const tick = () => {
+    PARALLAX.raf = 0;
+    const vh = window.innerHeight || 1;
+    PARALLAX.items.forEach((el) => {
+      if (!PARALLAX.inView.get(el)) return;
+      const r = el.getBoundingClientRect();
+      const center = r.top + r.height * 0.5;
+      const p = clamp((center - vh * 0.5) / vh, -1, 1);
+      const amp = Math.min(64, Math.max(20, r.height * 0.14));
+      const ty = -p * amp * (PARALLAX.speeds.get(el) || 0.14);
+      el.style.setProperty("--py", `${ty.toFixed(2)}px`);
+    });
+  };
+
+  const onScroll = () => {
+    if (PARALLAX.raf) return;
+    PARALLAX.raf = requestAnimationFrame(tick);
+  };
+
+  if (!PARALLAX.bound) {
+    PARALLAX.bound = true;
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+  }
+  onScroll();
+}
+
 function initChapters() {
   const root = $("[data-chapters]");
   if (!root || prefersReduced) {
@@ -253,6 +317,69 @@ function initChapters() {
   window.addEventListener("resize", updateTarget, { passive: true });
   updateTarget();
   setActive(0);
+}
+
+function initShowcases() {
+  const roots = $$("[data-showcase]");
+  if (!roots.length) return;
+
+  roots.forEach((root) => {
+    if (root.dataset.showcaseInit === "1") return;
+    root.dataset.showcaseInit = "1";
+    const cards = $$("[data-showcase-card]", root);
+    const media = $$("[data-showcase-media]", root);
+    if (!cards.length || cards.length !== media.length) return;
+
+    const setActive = (idx) => {
+      cards.forEach((n, i) => n.classList.toggle("is-active", i === idx));
+      media.forEach((n, i) => n.classList.toggle("is-active", i === idx));
+      const p = cards.length > 1 ? idx / (cards.length - 1) : 0;
+      root.style.setProperty("--showP", p.toFixed(4));
+    };
+
+    if (prefersReduced) {
+      setActive(0);
+      return;
+    }
+
+    let raf = 0;
+    let active = -1;
+
+    const update = () => {
+      raf = 0;
+      const cy = window.innerHeight * 0.5;
+      let best = 0;
+      let bestDist = Infinity;
+
+      cards.forEach((c, i) => {
+        const r = c.getBoundingClientRect();
+        const center = r.top + r.height * 0.5;
+        const d = Math.abs(center - cy);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      });
+
+      if (best !== active) {
+        active = best;
+        setActive(active);
+      }
+
+      const ar = cards[active].getBoundingClientRect();
+      const local = clamp((cy - ar.top) / Math.max(1, ar.height), 0, 1);
+      root.style.setProperty("--showLocal", local.toFixed(4));
+    };
+
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    onScroll();
+  });
 }
 
 function preloadImages(urls) {
@@ -421,6 +548,22 @@ function initReveal() {
     nodes.forEach((n) => n.classList.add("in"));
     return;
   }
+
+  const scopeRoots = new Map();
+  nodes.forEach((n) => {
+    if (n.dataset.revealDelay != null) return;
+    const scope = n.closest("[data-reveal-stagger]");
+    if (!scope) return;
+    if (!scopeRoots.has(scope)) scopeRoots.set(scope, []);
+    scopeRoots.get(scope).push(n);
+  });
+  scopeRoots.forEach((list) => {
+    list.forEach((n, i) => {
+      const ms = clamp(i * 70, 0, 420);
+      n.style.transitionDelay = `${ms}ms`;
+    });
+  });
+
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -682,39 +825,110 @@ function initLightbox() {
   if (!lb) return;
   const img = $("#lightboxImg");
   const title = $("#lightboxTitle");
+  const caption = $("#lightboxCaption");
+  const count = $("#lightboxCount");
+  const thumbs = $("#lightboxThumbs");
   const close = $("#lightboxClose");
   const next = $("#lightboxNext");
   const prev = $("#lightboxPrev");
-  const tiles = $$(".tile[data-src]");
-  if (!img || !title || !close || !next || !prev || !tiles.length) return;
+  if (!img || !title || !close || !next || !prev) return;
+  if (lb.dataset.lbInit === "1") return;
+  lb.dataset.lbInit = "1";
 
   let idx = 0;
-  function show(i) {
+  let lastFocus = null;
+
+  const getTiles = () => $$('.tile[data-src][data-lb="grid"]');
+
+  function buildThumbs(tiles) {
+    if (!thumbs) return;
+    if (thumbs.dataset.count === String(tiles.length)) return;
+    thumbs.dataset.count = String(tiles.length);
+    thumbs.innerHTML = tiles
+      .map(
+        (t, i) => `
+          <button class="lightbox-thumb" type="button" data-i="${i}" aria-label="${t.dataset.alt || `Image ${i + 1}`}">
+            <img src="${t.dataset.src || ""}" alt="" loading="lazy" decoding="async" />
+          </button>
+        `
+      )
+      .join("");
+  }
+
+  function setActiveThumb(i) {
+    if (!thumbs) return;
+    $$(".lightbox-thumb", thumbs).forEach((b) => b.classList.toggle("is-active", Number(b.dataset.i) === i));
+    const active = thumbs.querySelector(`.lightbox-thumb[data-i="${i}"]`);
+    if (active) active.scrollIntoView({ inline: "center", block: "nearest", behavior: prefersReduced ? "auto" : "smooth" });
+  }
+
+  function show(i, opts = {}) {
+    const tiles = getTiles();
+    if (!tiles.length) return;
     idx = (i + tiles.length) % tiles.length;
     const t = tiles[idx];
-    img.src = t.dataset.src || "";
-    img.alt = t.dataset.alt || "Gallery image";
-    title.textContent = t.dataset.alt || "Gallery";
+    const src = opts.src || t.dataset.src || "";
+    const alt = opts.alt || t.dataset.alt || "Gallery image";
+    img.src = src;
+    img.alt = alt;
+    title.textContent = alt || "Gallery";
+    if (caption) caption.textContent = alt || "";
+    if (count) count.textContent = `${idx + 1} / ${tiles.length}`;
+    buildThumbs(tiles);
+    setActiveThumb(idx);
     lb.classList.add("open");
     lb.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+    lastFocus = document.activeElement;
+    close.focus();
   }
 
   function hide() {
     lb.classList.remove("open");
     lb.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    lastFocus = null;
   }
 
-  tiles.forEach((t, i) => t.addEventListener("click", () => show(i)));
-  tiles.forEach((t, i) =>
-    t.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        show(i);
-      }
-    })
-  );
+  document.addEventListener("click", (e) => {
+    const openSrc = e.target.closest("[data-open-src]");
+    if (openSrc) {
+      const tiles = getTiles();
+      const src = openSrc.getAttribute("data-open-src") || "";
+      const i = tiles.findIndex((t) => (t.dataset.src || "") === src);
+      if (i >= 0) show(i);
+      else show(0, { src, alt: openSrc.getAttribute("data-open-alt") || "Gallery" });
+      return;
+    }
+    const tile = e.target.closest('.tile[data-src][data-lb="grid"]');
+    if (!tile) return;
+    const tiles = getTiles();
+    const i = tiles.indexOf(tile);
+    if (i >= 0) show(i);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (lb.classList.contains("open")) return;
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tile = e.target.closest?.('.tile[data-src][data-lb="grid"]');
+    if (!tile) return;
+    e.preventDefault();
+    const tiles = getTiles();
+    const i = tiles.indexOf(tile);
+    if (i >= 0) show(i);
+  });
+
+  if (thumbs) {
+    thumbs.addEventListener("click", (e) => {
+      const btn = e.target.closest?.(".lightbox-thumb[data-i]");
+      if (!btn) return;
+      const i = Number(btn.dataset.i);
+      if (!Number.isFinite(i)) return;
+      show(i);
+    });
+  }
+
   close.addEventListener("click", hide);
   lb.addEventListener("click", (e) => {
     if (e.target === lb) hide();
@@ -799,6 +1013,21 @@ function renderProjectsPage() {
   const filters = $("#projectFilters");
   if (!grid || !filters || !content?.projects?.length) return;
 
+  if (content?.brand?.website) {
+    const baseUrl = content.brand.website.replace(/\/+$/, "");
+    const itemList = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      itemListElement: content.projects.slice(0, 60).map((p, idx) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        name: p.title,
+        url: `${baseUrl}/project-details.html?id=${encodeURIComponent(p.id)}`,
+      })),
+    };
+    ensureJsonLd("projects-list", itemList);
+  }
+
   const cats = Array.from(new Set(content.projects.map((p) => p.category))).sort();
   const all = ["All", ...cats];
   let active = "All";
@@ -876,6 +1105,30 @@ function renderProjectDetails() {
   const d = document.head.querySelector('meta[name="description"]');
   if (d) d.setAttribute("content", `${p.title} — ${p.category}. ${p.scope}`);
   ensureMeta();
+  if (content?.brand?.website) {
+    const baseUrl = content.brand.website.replace(/\/+$/, "");
+    const imgs = Array.from(
+      new Set(
+        [p.cover, ...((content.gallery || []).map((g) => g.src) || [])]
+          .filter(Boolean)
+          .slice(0, 8)
+          .map((src) => (src.startsWith("http") ? src : `${baseUrl}/${normalizePath(src)}`))
+      )
+    );
+    ensureJsonLd("project", {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: p.title,
+      description: `${p.category}. ${p.scope}`,
+      url: `${baseUrl}/project-details.html?id=${encodeURIComponent(p.id)}`,
+      image: imgs,
+      provider: {
+        "@type": "Organization",
+        name: content.brand.name,
+        url: baseUrl,
+      },
+    });
+  }
   const hero = $("#projectHero");
   const body = $("#projectBody");
   if (!hero || !body) return;
@@ -970,10 +1223,151 @@ function renderProjectDetails() {
         </div>
       </div>
     </section>
+
+    <section class="section" aria-labelledby="proj-gallery" data-showcase data-reveal-stagger>
+      <div class="wrap">
+        <div class="eyebrow">
+          <div>
+            <h2 id="proj-gallery" data-reveal>Gallery</h2>
+            <p data-reveal>Scroll-driven scenes with parallax depth and premium transitions.</p>
+          </div>
+          <div class="rule" aria-hidden="true"></div>
+        </div>
+
+        <div class="showcase-shell" data-reveal>
+          <div class="showcase-stage" aria-label="Project scenes">
+            <div class="showcase-media">
+              ${(() => {
+                const pool = [
+                  "assets/portfolio/p14.webp",
+                  "assets/portfolio/p15.webp",
+                  "assets/portfolio/p16.webp",
+                  "assets/portfolio/p17.webp",
+                  "assets/portfolio/p18.webp",
+                  "assets/portfolio/p19.webp",
+                  "assets/portfolio/p20.webp",
+                  "assets/portfolio/p21.webp",
+                  "assets/portfolio/p22.webp",
+                  "assets/portfolio/p23.webp",
+                  "assets/portfolio/p24.webp",
+                  "assets/portfolio/p25.webp",
+                  "assets/portfolio/p26.webp",
+                  "assets/portfolio/p27.webp",
+                ];
+                const base = p.cover || pool[0];
+                const start = Math.abs(
+                  String(p.id)
+                    .split("")
+                    .reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) % 997, 7)
+                );
+                const picks = [base];
+                for (let i = 0; picks.length < 5 && i < pool.length; i++) {
+                  const src = pool[(start + i * 3) % pool.length];
+                  if (!picks.includes(src)) picks.push(src);
+                }
+                return picks
+                  .map(
+                    (src, i) => `
+                      <div class="showcase-media-item${i === 0 ? " is-active" : ""}" data-showcase-media>
+                        <img src="${src}" alt="${p.title} scene ${i + 1}" loading="lazy" decoding="async" data-parallax="0.16" />
+                      </div>
+                    `
+                  )
+                  .join("");
+              })()}
+            </div>
+            <div class="showcase-ui" aria-hidden="true">
+              <div class="showcase-progress"><i></i></div>
+              <div class="showcase-hint">Scroll</div>
+            </div>
+          </div>
+
+          <div class="showcase-cards" aria-label="Scene notes">
+            ${(() => {
+              const notes = [
+                { t: "Spatial composition", d: "Primary axes, clean circulation, and controlled sightlines for a calm premium feel." },
+                { t: "Material rhythm", d: "A restrained palette with metallic warmth and soft specular highlights." },
+                { t: "Lighting intent", d: "Layered lighting with glare control for a cinematic yet comfortable mood." },
+                { t: "Execution intelligence", d: "Sequencing and coordination that reduces rework and protects finish quality." },
+                { t: "Handover discipline", d: "Snag closure, detailing checks, and readiness for occupancy." },
+              ];
+              return notes
+                .map(
+                  (n, i) => `
+                    <article class="showcase-card${i === 0 ? " is-active" : ""}" data-showcase-card>
+                      <div class="in">
+                        <div class="top"><b>${String(i + 1).padStart(2, "0")}</b><small>Scene</small></div>
+                        <h3>${n.t}</h3>
+                        <p>${n.d}</p>
+                        <div class="hero-actions" style="margin-top: 14px">
+                          <a class="btn primary" href="${BASE}contact.html">Discuss this style <span class="icon">→</span></a>
+                          <a class="btn" href="${BASE}projects.html">More projects <span class="icon">↗</span></a>
+                        </div>
+                      </div>
+                    </article>
+                  `
+                )
+                .join("");
+            })()}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="proj-next" data-reveal-stagger>
+      <div class="wrap">
+        <div class="eyebrow">
+          <div>
+            <h2 id="proj-next" data-reveal>Next projects</h2>
+            <p data-reveal>More work with metrics and case-study storytelling.</p>
+          </div>
+          <div class="rule" aria-hidden="true"></div>
+        </div>
+        <div class="slider" data-slider data-reveal>
+          <div class="slider-track">
+            ${(() => {
+              const list = content.projects.filter((x) => x.id !== p.id).slice(0, 8);
+              return list
+                .map(
+                  (x) => `
+                    <div class="slide">
+                      <article class="card project-card" data-tilt data-id="${x.id}" tabindex="0" role="link" aria-label="${x.title}">
+                        <div class="project-thumb">
+                          <span class="badge">${x.category}</span>
+                          <img src="${x.cover}" alt="${x.title}" loading="lazy" decoding="async" />
+                        </div>
+                        <div class="in">
+                          <h3>${x.title}</h3>
+                          <p>${x.scope}</p>
+                          <div class="kv">
+                            <small>Area <span>${formatSqft(x.areaSqft)}</span></small>
+                            <small>Location <span>${x.location || "—"}</span></small>
+                            <small>Timeline <span>${formatDays(x.durationDays)}</span></small>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                  `
+                )
+                .join("");
+            })()}
+          </div>
+          <div class="slider-controls" aria-hidden="true">
+            <button class="btn" type="button" data-prev>←</button>
+            <button class="btn" type="button" data-next>→</button>
+          </div>
+        </div>
+      </div>
+    </section>
   `;
 
   initReveal();
+  initShowcases();
+  initParallax();
   initScene();
+  initSliders();
+  initTilt(body);
+  initProjectLinks(body);
 }
 
 function renderServiceDetails() {
@@ -1246,19 +1640,127 @@ function renderTestimonials() {
     .join("");
 }
 
-function renderGallery() {
-  const root = $("#galleryGrid");
-  if (!root || !content?.gallery?.length) return;
-  root.innerHTML = content.gallery
+function renderHomeTestimonials() {
+  const root = $("#homeTestimonials");
+  if (!root || !content?.testimonials?.length) return;
+  root.innerHTML = content.testimonials
+    .slice(0, 6)
     .map(
-      (g) => `
-        <div class="tile" data-src="${g.src}" data-alt="${g.alt}" tabindex="0" role="button" aria-label="${g.alt}">
-          <img src="${g.src}" alt="${g.alt}" loading="lazy" decoding="async" />
-          <div class="cap">${g.alt}</div>
+      (t) => `
+        <div class="slide">
+          <article class="card" data-reveal>
+            <div class="in">
+              <div class="kicker"><i></i><span>${t.company}</span></div>
+              <h3 style="margin-top: 12px">${t.name}</h3>
+              <p>“${t.quote}”</p>
+            </div>
+          </article>
         </div>
       `
     )
     .join("");
+  initReveal();
+}
+
+function renderGallery() {
+  const root = $("#galleryGrid");
+  if (!root || !content?.gallery?.length) return;
+
+  const filtersEl = $("#galleryFilters");
+  const viewsEl = $("#galleryViews");
+  const countEl = $("#galleryCount");
+  const stripEl = $("#galleryStrip");
+
+  const items = content.gallery.map((g, i) => {
+    const src = g.src || "";
+    const alt = g.alt || "Gallery";
+    const cat = src.includes("assets/portfolio/") ? "Projects" : "Studio";
+    const s = (src + alt)
+      .split("")
+      .reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) % 997, i + 7);
+    const variant = s % 10;
+    const sizeClass = variant < 2 ? "tile-big" : variant < 5 ? "tile-wide" : variant < 7 ? "tile-tall" : "";
+    return { src, alt, cat, sizeClass, i };
+  });
+
+  let active = "All";
+  let view = "mosaic";
+
+  const renderStrip = () => {
+    if (!stripEl) return;
+    const picks = items.slice(0, 12);
+    stripEl.innerHTML = picks
+      .map(
+        (g) => `
+          <button class="strip-tile" type="button" data-open-src="${g.src}" data-open-alt="${g.alt}" aria-label="${g.alt}">
+            <img src="${g.src}" alt="${g.alt}" loading="lazy" decoding="async" data-parallax="0.12" />
+            <span>${g.alt}</span>
+          </button>
+        `
+      )
+      .join("");
+  };
+
+  const ensureControls = () => {
+    if (filtersEl && !filtersEl.dataset.bound) {
+      const cats = ["All", "Projects", "Studio"];
+      filtersEl.innerHTML = cats
+        .map((c) => `<button class="filter${c === active ? " is-active" : ""}" type="button" data-cat="${c}">${c}</button>`)
+        .join("");
+      filtersEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-cat]");
+        if (!btn) return;
+        active = btn.dataset.cat || "All";
+        $$("button[data-cat]", filtersEl).forEach((b) => b.classList.toggle("is-active", b.dataset.cat === active));
+        renderGrid();
+      });
+      filtersEl.dataset.bound = "1";
+    }
+
+    if (viewsEl && !viewsEl.dataset.bound) {
+      const views = [
+        { k: "mosaic", label: "Mosaic" },
+        { k: "grid", label: "Grid" },
+      ];
+      viewsEl.innerHTML = views
+        .map((v) => `<button class="filter${v.k === view ? " is-active" : ""}" type="button" data-view="${v.k}">${v.label}</button>`)
+        .join("");
+      viewsEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-view]");
+        if (!btn) return;
+        view = btn.dataset.view || "mosaic";
+        $$("button[data-view]", viewsEl).forEach((b) => b.classList.toggle("is-active", b.dataset.view === view));
+        renderGrid();
+      });
+      viewsEl.dataset.bound = "1";
+    }
+  };
+
+  const renderGrid = () => {
+    const visible = active === "All" ? items : items.filter((x) => x.cat === active);
+    root.classList.toggle("mosaic", view === "mosaic");
+    root.innerHTML = visible
+      .map(
+        (g) => `
+          <div class="tile ${g.sizeClass}" data-lb="grid" data-src="${g.src}" data-alt="${g.alt}" tabindex="0" role="button" aria-label="${g.alt}" data-reveal>
+            <img src="${g.src}" alt="${g.alt}" loading="lazy" decoding="async" data-parallax="0.16" />
+            <div class="cap">
+              <span class="cap-tag">${g.cat}</span>
+              <span class="cap-title">${g.alt}</span>
+            </div>
+          </div>
+        `
+      )
+      .join("");
+
+    if (countEl) countEl.textContent = `${visible.length} / ${items.length} images`;
+    initReveal();
+    initParallax();
+  };
+
+  renderStrip();
+  ensureControls();
+  renderGrid();
 }
 
 function initTilt(root = document) {
@@ -1367,6 +1869,8 @@ function boot() {
   initVelocityBlur();
   initSceneHue();
   initChapters();
+  initShowcases();
+  initParallax();
   initFloating();
   initTilt();
   initSliders();
@@ -1384,6 +1888,7 @@ function boot() {
   if (page === "insight") renderInsightPost();
   if (page === "testimonials") renderTestimonials();
   if (page === "gallery") renderGallery();
+  renderHomeTestimonials();
 
   initLightbox();
   initContactForm();

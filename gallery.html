@@ -80,6 +80,20 @@
             </div>
             <div class="rule" aria-hidden="true"></div>
           </div>
+
+          <div class="slider gallery-strip" data-slider data-reveal aria-label="Featured gallery strip">
+            <div class="slider-track" id="galleryStrip"></div>
+            <div class="slider-controls" aria-hidden="true">
+              <button class="btn" type="button" data-prev>←</button>
+              <button class="btn" type="button" data-next>→</button>
+            </div>
+          </div>
+
+          <div class="gallery-toolbar" data-reveal>
+            <div class="filters" id="galleryFilters" aria-label="Gallery filters"></div>
+            <div class="filters" id="galleryViews" aria-label="Gallery view"></div>
+            <div class="gallery-count" id="galleryCount" aria-live="polite"></div>
+          </div>
           <div class="gallery" id="galleryGrid"></div>
         </div>
       </section>
@@ -97,6 +111,13 @@
         </div>
         <div class="lightbox-media">
           <img id="lightboxImg" alt="Gallery image" decoding="async" />
+        </div>
+        <div class="lightbox-bottom">
+          <div class="lightbox-meta">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+            <div class="lightbox-count" id="lightboxCount"></div>
+          </div>
+          <div class="lightbox-thumbs" id="lightboxThumbs" aria-label="Thumbnail strip"></div>
         </div>
       </div>
     </div>
