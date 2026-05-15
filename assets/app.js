@@ -908,12 +908,26 @@ function initFloating() {
   if (!content?.brand) return;
   const el = document.createElement("div");
   el.className = "floating";
+  const brochureHref = "/ONE%202%20ONE%20DESIGN%20COMPANY%20PROFILE.pdf";
   el.innerHTML = `
     <a class="fab" href="${content.brand.whatsapp}" target="_blank" rel="noreferrer" aria-label="WhatsApp">
       <strong>WA</strong>
     </a>
+    <a class="fab" href="${brochureHref}" download="ONE 2 ONE DESIGN COMPANY PROFILE.pdf" aria-label="Download brochure">
+      <strong>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v10" />
+          <path d="M8 11l4 4 4-4" />
+          <path d="M4 21h16" />
+        </svg>
+      </strong>
+    </a>
     <a class="fab" href="/contact/" aria-label="Contact">
-      <strong>✦</strong>
+      <strong>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.28-1.22a2 2 0 0 1 2.11-.45c.9.33 1.84.57 2.8.7A2 2 0 0 1 22 16.92z" />
+        </svg>
+      </strong>
     </a>
   `;
   document.body.appendChild(el);
@@ -1196,9 +1210,90 @@ function initProjectLinks(root = document) {
 
 function renderProjectDetails() {
   const id = qsParam("id") || document.body.dataset.projectId;
-  if (!id || !content?.projects?.length) return;
+  const hero = $("#projectHero");
+  const body = $("#projectBody");
+  if (!hero || !body) return;
+  if (!content?.projects?.length) {
+    hero.innerHTML = `
+      <div class="hero-bg" aria-hidden="true">
+        <canvas id="scene"></canvas>
+      </div>
+      <div class="wrap">
+        <div class="hero-grid">
+          <div>
+            <div class="kicker" data-reveal><i></i><span>Projects</span></div>
+            <div class="h1 blur-on-scroll" data-reveal>Project details</div>
+            <p class="lead" data-reveal>Project data is not available yet.</p>
+            <div class="hero-actions" data-reveal>
+              <a class="btn primary" href="/projects/">Browse projects <span class="icon">→</span></a>
+              <a class="btn" href="/contact/">Contact <span class="icon">↗</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    body.innerHTML = "";
+    initReveal();
+    return;
+  }
+  if (!id) {
+    document.title = `Project details — ${content.brand.name}`;
+    ensureMeta();
+    hero.innerHTML = `
+      <div class="hero-bg" aria-hidden="true">
+        <canvas id="scene"></canvas>
+      </div>
+      <div class="wrap">
+        <div class="hero-grid">
+          <div>
+            <div class="kicker" data-reveal><i></i><span>Project</span></div>
+            <div class="h1 blur-on-scroll" data-reveal>Select a project</div>
+            <p class="lead" data-reveal>Open a project from the Projects page to view the full case study.</p>
+            <div class="hero-actions" data-reveal>
+              <a class="btn primary" href="/projects/">Go to projects <span class="icon">→</span></a>
+              <a class="btn" href="/contact/">Request a quotation <span class="icon">↗</span></a>
+            </div>
+          </div>
+          <aside class="glass" data-reveal>
+            <div class="in">
+              <div class="kicker"><i></i><span>Tip</span></div>
+              <p style="margin-top: 10px; margin-bottom: 0">Use the projects grid and tap any card to open details.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    `;
+    body.innerHTML = "";
+    initReveal();
+    return;
+  }
+
   const p = content.projects.find((x) => x.id === id);
-  if (!p) return;
+  if (!p) {
+    document.title = `Project not found — ${content.brand.name}`;
+    ensureMeta();
+    hero.innerHTML = `
+      <div class="hero-bg" aria-hidden="true">
+        <canvas id="scene"></canvas>
+      </div>
+      <div class="wrap">
+        <div class="hero-grid">
+          <div>
+            <div class="kicker" data-reveal><i></i><span>404</span></div>
+            <div class="h1 blur-on-scroll" data-reveal>Project not found</div>
+            <p class="lead" data-reveal>The project link is invalid or no longer available.</p>
+            <div class="hero-actions" data-reveal>
+              <a class="btn primary" href="/projects/">Back to projects <span class="icon">→</span></a>
+              <a class="btn" href="/contact/">Contact <span class="icon">↗</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    body.innerHTML = "";
+    initReveal();
+    return;
+  }
 
   document.title = `${p.title} — ${content.brand.name}`;
   const d = document.head.querySelector('meta[name="description"]');
@@ -1228,9 +1323,6 @@ function renderProjectDetails() {
       },
     });
   }
-  const hero = $("#projectHero");
-  const body = $("#projectBody");
-  if (!hero || !body) return;
 
   hero.innerHTML = `
     <div class="hero-bg" aria-hidden="true">

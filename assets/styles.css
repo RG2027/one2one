@@ -1412,20 +1412,22 @@ main {
   width: 52px;
   height: 52px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(223, 191, 79, 0.28);
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(14px);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(223, 191, 79, 0.1);
   display: grid;
   place-items: center;
   color: rgba(255, 255, 255, 0.88);
-  transition: transform 240ms ease, border-color 240ms ease, background 240ms ease;
+  transition: transform 240ms ease, border-color 240ms ease, background 240ms ease, box-shadow 240ms ease, color 240ms ease;
 }
 
 .fab:hover {
   transform: translateY(-2px);
-  border-color: rgba(223, 191, 79, 0.26);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(223, 191, 79, 0.62);
+  background: rgba(223, 191, 79, 0.08);
+  color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.46), 0 0 0 2px rgba(223, 191, 79, 0.18);
 }
 
 .fab strong {
@@ -1433,6 +1435,12 @@ main {
   font-weight: 650;
   letter-spacing: 0.06em;
   font-size: 12px;
+}
+
+.fab svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .lightbox {
