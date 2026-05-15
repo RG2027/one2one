@@ -2096,6 +2096,18 @@ footer {
   .nav {
     height: calc(var(--navH) - 12px);
     padding: 8px 10px 8px 12px;
+    gap: 10px;
+  }
+
+  .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+  }
+
+  .brand .txt {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .brand img {
@@ -2105,19 +2117,95 @@ footer {
 
   .brand strong {
     font-size: 11px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .brand span {
     font-size: 10px;
   }
 
+  .brand .txt > span {
+    display: none;
+  }
+
+  .nav-actions {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  .nav-actions .btn.primary {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 44vw;
+    padding: 10px 10px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-actions .btn.primary .icon {
+    display: none;
+  }
+
+  .menu {
+    padding: 12px;
+    place-items: start center;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu-panel {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+  }
+
+  .menu-top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: rgba(12, 14, 18, 0.92);
+    backdrop-filter: blur(16px);
+  }
+
+  body.is-menu-open {
+    overflow: hidden;
+  }
+
   .hero {
-    padding: calc(var(--navH) + 44px) 0 52px;
+    min-height: auto;
+    padding: calc(var(--navH) + 28px) 0 44px;
+    align-items: start;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .kicker {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .kicker span {
+    white-space: normal;
+    line-height: 1.4;
   }
 
   .h1 {
     font-size: clamp(32px, 10.4vw, 54px);
     letter-spacing: -0.03em;
+    text-transform: none;
+    line-height: 1.02;
   }
 
   .lead {
@@ -2128,8 +2216,17 @@ footer {
     gap: 10px;
   }
 
+  .hero-actions .btn {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
   .stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat:last-child {
+    grid-column: 1 / -1;
   }
 
   .section {
@@ -2138,6 +2235,17 @@ footer {
 
   .section.tight {
     padding: 68px 0;
+  }
+
+  .eyebrow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rule {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 12px;
   }
 
   .grid.two,
@@ -2151,6 +2259,105 @@ footer {
 
   .row {
     grid-template-columns: 1fr;
+  }
+
+  .filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .slider-track {
+    grid-auto-columns: minmax(82%, 1fr);
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .gallery-strip .slider-track {
+    grid-auto-columns: minmax(78%, 1fr);
+  }
+
+  .slider-controls {
+    display: none;
+  }
+
+  .gallery-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero .project-thumb {
+    height: 220px !important;
+  }
+
+  .kv small {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .kv small span,
+  .lead,
+  .lightbox-caption,
+  p {
+    overflow-wrap: anywhere;
+  }
+
+  .step {
+    grid-template-columns: 44px 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .step .num {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+
+  .lightbox {
+    padding: 12px;
+    place-items: start center;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lightbox-panel {
+    max-height: calc(100vh - 24px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .lightbox-top {
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: rgba(12, 14, 18, 0.92);
+    backdrop-filter: blur(16px);
+  }
+
+  .lightbox-top > div {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .lightbox-media {
+    aspect-ratio: auto;
+    height: min(56vh, 420px);
   }
 
   .foot {

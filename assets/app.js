@@ -3,7 +3,7 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const content = window.ONE2ONE_CONTENT;
-const BASE = window.location.pathname.includes("/services/") ? "../" : "";
+const BASE = "";
 const PARALLAX = { items: [], inView: new Map(), speeds: new Map(), io: null, raf: 0, bound: false };
 
 function clamp(v, a, b) {
@@ -17,6 +17,17 @@ function lerp(a, b, t) {
 function normalizePath(p) {
   if (!p) return "";
   return p.replace(/^(\.\/)+/g, "").replace(/^(\.\.\/)+/g, "").replace(/^\//, "");
+}
+
+function absPath(p) {
+  const n = normalizePath(p);
+  return n ? "/" + n : "";
+}
+
+function cleanPathname(pathname) {
+  const p = (pathname || "/").replace(/\/index\.html$/i, "/").replace(/\.html$/i, "/");
+  if (!p.startsWith("/")) return "/" + p;
+  return p;
 }
 
 function ensureMeta() {
@@ -43,25 +54,77 @@ function ensureMeta() {
     el.setAttribute("href", href);
   };
 
-  const desc = head.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+  let desc = head.querySelector('meta[name="description"]')?.getAttribute("content") || "";
+  const existingKeywords = head.querySelector('meta[name="keywords"]')?.getAttribute("content") || "";
   const baseUrl = (content.brand.website || "").replace(/\/+$/, "");
-  const path = window.location.pathname.endsWith("/") ? window.location.pathname + "index.html" : window.location.pathname;
-  const canonical = baseUrl ? baseUrl + path : window.location.href;
+  const canonicalPath = cleanPathname(window.location.pathname);
+  const u = new URL(window.location.href);
+  const keep = ["id", "slug"].filter((k) => u.searchParams.get(k));
+  const search = keep.length ? "?" + keep.map((k) => `${k}=${encodeURIComponent(u.searchParams.get(k) || "")}`).join("&") : "";
+  const canonical = baseUrl ? baseUrl + canonicalPath + search : window.location.href;
+
+  const page = document.body.dataset.page || "website";
+  const slug = (document.body.dataset.slug || "").trim();
+  if (page === "service" && slug) {
+    const svc = content?.services?.find((s) => (s.slug || "").toLowerCase() === slug.toLowerCase());
+    if (svc?.seoTitle) document.title = svc.seoTitle;
+    if (svc?.seoDescription) {
+      desc = svc.seoDescription;
+      ensureMetaTag("name", "description", desc);
+    }
+  }
 
   const preload = document.body.dataset.preload || "";
-  const ogImage = baseUrl ? baseUrl + "/" + normalizePath(preload || "assets/media/hero.webp") : preload;
+  const ogImage = baseUrl ? baseUrl + absPath(preload || "assets/media/hero.webp") : preload;
+  const baseKeywords = [
+    content.brand.name,
+    "interior design",
+    "turnkey fit out",
+    "interior contracting",
+    "MEP engineering services",
+    "joinery",
+    "space planning",
+    "corporate office interiors",
+    "Mumbai",
+    "India",
+  ];
+
+  const serviceExtras = {
+    "commercial-interiors": ["commercial interiors", "commercial fitout", "office fitout", "retail fitout", "turnkey execution"],
+    "corporate-office-design": ["corporate office design", "workplace interiors", "office interior design", "office execution", "large-scale fitout"],
+    "hospital-interiors": ["hospital interiors", "healthcare interiors", "clinic fitout", "hygiene finishes", "MEP coordination for hospitals"],
+    "hotel-interiors": ["hotel interiors", "hospitality interiors", "guest room fitout", "lobby interiors", "durable specifications"],
+    "interior-contracting": ["interior contracting", "turnkey execution", "site execution", "quality controls", "project management"],
+    "interior-design": ["interior design studio", "concept design", "design development", "premium interiors", "execution-ready drawings"],
+    "joinery-manufacturing": ["joinery manufacturing", "custom joinery", "factory-backed joinery", "modular joinery", "finish consistency"],
+    "mep-engineering": ["MEP engineering services", "HVAC coordination", "electrical planning", "plumbing", "data and networking"],
+    "residential-interiors": ["residential interiors", "luxury home interiors", "apartment interiors", "villa interiors", "custom joinery"],
+    "restaurant-interiors": ["restaurant interiors", "cafe interiors", "hospitality fitout", "ambience design", "premium finishing"],
+    "space-planning": ["space planning", "layout planning", "zoning", "circulation planning", "workplace strategy"],
+    "turnkey-fitout": ["turnkey fit out", "turnkey fit-out solutions", "design and build", "procurement", "handover"],
+  };
+
+  let pageKeywords = (document.body.dataset.keywords || "").trim() || existingKeywords;
+  if (!document.body.dataset.keywords && page === "service" && slug) {
+    const svc = content?.services?.find((s) => (s.slug || "").toLowerCase() === slug.toLowerCase());
+    const title = svc?.title || slug.replace(/-/g, " ");
+    const extras = serviceExtras[slug] || [];
+    const merged = Array.from(new Set([title, `${title} Mumbai`, `${title} India`, ...extras, ...baseKeywords]));
+    pageKeywords = merged.join(", ");
+  }
+  if (!pageKeywords) pageKeywords = baseKeywords.join(", ");
 
   ensureMetaTag("name", "robots", "index,follow,max-image-preview:large");
   ensureMetaTag("name", "application-name", content.brand.name);
   ensureMetaTag("name", "author", content.brand.name);
   ensureMetaTag("name", "referrer", "strict-origin-when-cross-origin");
   ensureMetaTag("name", "format-detection", "telephone=no");
+  ensureMetaTag("name", "keywords", pageKeywords);
   ensureLink("canonical", canonical);
-
-  const page = document.body.dataset.page || "website";
   const ogType = page === "insight" ? "article" : "website";
 
   ensureMetaTag("property", "og:site_name", content.brand.name);
+  ensureMetaTag("property", "og:locale", "en_IN");
   ensureMetaTag("property", "og:title", document.title);
   ensureMetaTag("property", "og:description", desc || "ONE 2 ONE DESIGN — luxury interiors and turnkey execution across India.");
   ensureMetaTag("property", "og:type", ogType);
@@ -72,6 +135,34 @@ function ensureMeta() {
   ensureMetaTag("name", "twitter:title", document.title);
   ensureMetaTag("name", "twitter:description", desc || "ONE 2 ONE DESIGN — luxury interiors and turnkey execution across India.");
   ensureMetaTag("name", "twitter:image", ogImage);
+
+  if (baseUrl) {
+    ensureJsonLd("org", {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: content.brand.name,
+      url: baseUrl,
+      telephone: content.brand.phoneE164 || content.brand.phoneDisplay,
+      email: content.brand.email,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: content.brand.addressLine,
+        addressLocality: content.brand.city,
+        addressCountry: content.brand.country || "IN",
+      },
+    });
+    ensureJsonLd("website", {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: content.brand.name,
+      url: baseUrl,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${baseUrl}/projects/?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    });
+  }
 }
 
 function ensureJsonLd(id, json) {
@@ -430,15 +521,17 @@ function initPreloader() {
 
   const urls = [];
   const pagePreload = document.body.dataset.preload;
-  if (pagePreload) urls.push(pagePreload);
-  urls.push("logo.jpeg");
+  if (pagePreload) urls.push(absPath(pagePreload) || pagePreload);
+  urls.push("/logo.jpeg");
 
   $$("img").slice(0, 6).forEach((img) => {
     const src = img.getAttribute("src");
-    if (src) urls.push(src);
+    if (!src) return;
+    if (/^https?:\/\//i.test(src) || src.startsWith("/")) urls.push(src);
+    else urls.push(absPath(src));
   });
 
-  const candidates = content?.gallery?.slice(0, 6).map((x) => x.src) || [];
+  const candidates = content?.gallery?.slice(0, 6).map((x) => absPath(x.src)) || [];
   urls.push(...candidates);
 
   return preloadImages(urls).then(() => {
@@ -625,11 +718,16 @@ function initPageTransitions() {
 }
 
 function setActiveNav() {
-  const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-  $$('a[data-nav]').forEach((a) => {
-    const href = (a.getAttribute("href") || "").toLowerCase();
-    const file = href.split("?")[0];
-    const isPage = file === path || (path === "" && file.endsWith("index.html"));
+  const current = cleanPathname(location.pathname);
+  $$("a[data-nav]").forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    let p = "";
+    try {
+      p = cleanPathname(new URL(href, location.origin).pathname);
+    } catch {
+      p = "";
+    }
+    const isPage = p && p === current;
     if (isPage) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   });
@@ -643,22 +741,23 @@ function injectShell() {
   const svcLinks = (content.services || [])
     .map(
       (s) =>
-        `<a href="${BASE}services/${s.slug}.html" data-nav><b>${s.title}</b><small>${s.summary}</small></a>`
+        `<a href="/services/${s.slug}/" data-nav><b>${s.title}</b><small>${s.summary}</small></a>`
     )
     .join("");
 
   const primaryLinks = [
-    { href: `${BASE}index.html`, label: "Home" },
-    { href: `${BASE}projects.html`, label: "Projects" },
-    { href: `${BASE}industries.html`, label: "Industries" },
-    { href: `${BASE}process.html`, label: "Process" },
-    { href: `${BASE}factory.html`, label: "Factory" },
-    { href: `${BASE}team.html`, label: "Team" },
-    { href: `${BASE}insights.html`, label: "Insights" },
-    { href: `${BASE}careers.html`, label: "Careers" },
-    { href: `${BASE}testimonials.html`, label: "Testimonials" },
-    { href: `${BASE}gallery.html`, label: "Gallery" },
-    { href: `${BASE}contact.html`, label: "Contact" },
+    { href: "/", label: "Home" },
+    { href: "/services/", label: "Services" },
+    { href: "/projects/", label: "Projects" },
+    { href: "/industries/", label: "Industries" },
+    { href: "/process/", label: "Process" },
+    { href: "/factory/", label: "Factory" },
+    { href: "/team/", label: "Team" },
+    { href: "/insights/", label: "Insights" },
+    { href: "/careers/", label: "Careers" },
+    { href: "/testimonials/", label: "Testimonials" },
+    { href: "/gallery/", label: "Gallery" },
+    { href: "/contact/", label: "Contact" },
   ];
 
   const menuLinks = primaryLinks
@@ -669,8 +768,8 @@ function injectShell() {
     headerRoot.innerHTML = `
       <header>
         <nav class="nav" aria-label="Primary">
-          <a class="brand" href="${BASE}index.html" data-nav>
-            <img src="${BASE}logo.jpeg" alt="${content.brand.name} logo" width="38" height="38" decoding="async" />
+          <a class="brand" href="/" data-nav>
+            <img src="/logo.jpeg" alt="${content.brand.name} logo" width="38" height="38" decoding="async" />
             <span class="txt">
               <strong>${content.brand.name}</strong>
               <span>${content.brand.tagline}</span>
@@ -678,7 +777,7 @@ function injectShell() {
           </a>
 
           <div class="nav-links" aria-label="Site">
-            <a class="nav-link" href="${BASE}index.html" data-nav>Home</a>
+            <a class="nav-link" href="/" data-nav>Home</a>
 
             <div class="nav-item" data-drop="services">
               <button class="nav-link" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="servicesDropdown">
@@ -691,20 +790,20 @@ function injectShell() {
                     <aside class="drop-aside">
                       <h4>Design → Engineering → Execution</h4>
                       <p>Detailed service pages with workflows, feature grids, and premium storytelling modules.</p>
-                      <a class="btn primary" href="${BASE}services.html" style="width: fit-content">All Services <span class="icon">→</span></a>
+                      <a class="btn primary" href="/services/" style="width: fit-content">All Services <span class="icon">→</span></a>
                     </aside>
                   </div>
                 </div>
               </div>
             </div>
 
-            <a class="nav-link" href="${BASE}projects.html" data-nav>Projects</a>
-            <a class="nav-link" href="${BASE}about.html" data-nav>About</a>
-            <a class="nav-link" href="${BASE}contact.html" data-nav>Contact</a>
+            <a class="nav-link" href="/projects/" data-nav>Projects</a>
+            <a class="nav-link" href="/about/" data-nav>About</a>
+            <a class="nav-link" href="/contact/" data-nav>Contact</a>
           </div>
 
           <div class="nav-actions">
-            <a class="btn primary" href="${BASE}contact.html">Let’s Design <span class="icon">→</span></a>
+            <a class="btn primary" href="/contact/">Let’s Design <span class="icon">→</span></a>
             <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
               <span class="hamburger" aria-hidden="true"><i></i><i></i><i></i></span>
             </button>
@@ -724,8 +823,8 @@ function injectShell() {
               <h4>${content.brand.shortName} execution platform</h4>
               <p>Luxury interior delivery with disciplined PMO, MEP coordination, and manufacturing mindset.</p>
               <div style="display:grid; gap:10px">
-                <a class="btn primary" href="${BASE}contact.html">Request a Consultation <span class="icon">→</span></a>
-                <a class="btn" href="${BASE}projects.html">Explore Projects <span class="icon">↘</span></a>
+                <a class="btn primary" href="/contact/">Request a Consultation <span class="icon">→</span></a>
+                <a class="btn" href="/projects/">Explore Projects <span class="icon">↘</span></a>
               </div>
             </aside>
           </div>
@@ -767,15 +866,15 @@ function injectShell() {
                     </div>
                     <div class="hero-actions" style="margin-top: 12px">
                       <button class="btn primary" type="submit">Subscribe <span class="icon">→</span></button>
-                      <a class="btn" href="${BASE}insights.html">Read insights <span class="icon">↗</span></a>
+                      <a class="btn" href="/insights/">Read insights <span class="icon">↗</span></a>
                     </div>
                   </form>
                 </div>
               </details>
             </div>
             <div class="hero-actions" style="margin-top: 16px">
-              <a class="btn primary" href="${BASE}contact.html">Start a Project <span class="icon">→</span></a>
-              <a class="btn" href="${BASE}projects.html">View Projects <span class="icon">↘</span></a>
+              <a class="btn primary" href="/contact/">Start a Project <span class="icon">→</span></a>
+              <a class="btn" href="/projects/">View Projects <span class="icon">↘</span></a>
             </div>
             <div class="social">${socials}</div>
           </div>
@@ -813,7 +912,7 @@ function initFloating() {
     <a class="fab" href="${content.brand.whatsapp}" target="_blank" rel="noreferrer" aria-label="WhatsApp">
       <strong>WA</strong>
     </a>
-    <a class="fab" href="${BASE}contact.html" aria-label="Contact">
+    <a class="fab" href="/contact/" aria-label="Contact">
       <strong>✦</strong>
     </a>
   `;
@@ -997,8 +1096,8 @@ function renderServicesIndex() {
             <h3 style="margin-top: 12px">${s.title}</h3>
             <p>${s.summary}</p>
             <div class="hero-actions" style="margin-top: 14px">
-              <a class="btn primary" href="${BASE}services/${s.slug}.html">View Service <span class="icon">→</span></a>
-              <a class="btn" href="${BASE}contact.html">Enquire <span class="icon">↗</span></a>
+              <a class="btn primary" href="/services/${s.slug}/">View Service <span class="icon">→</span></a>
+              <a class="btn" href="/contact/">Enquire <span class="icon">↗</span></a>
             </div>
           </div>
         </article>
@@ -1022,7 +1121,7 @@ function renderProjectsPage() {
         "@type": "ListItem",
         position: idx + 1,
         name: p.title,
-        url: `${baseUrl}/project-details.html?id=${encodeURIComponent(p.id)}`,
+        url: `${baseUrl}/project-details/?id=${encodeURIComponent(p.id)}`,
       })),
     };
     ensureJsonLd("projects-list", itemList);
@@ -1040,7 +1139,7 @@ function renderProjectsPage() {
       <article class="card project-card" data-tilt data-id="${p.id}" tabindex="0" role="link" aria-label="${p.title}">
         <div class="project-thumb">
           <span class="badge">${p.category}</span>
-          <img src="${p.cover}" alt="${p.title}" loading="lazy" decoding="async" />
+          <img src="${absPath(p.cover)}" alt="${p.title}" loading="lazy" decoding="async" />
         </div>
         <div class="in">
           <h3>${p.title}</h3>
@@ -1083,7 +1182,7 @@ function initProjectLinks(root = document) {
     const open = () => {
       const id = el.dataset.id;
       if (!id) return;
-      window.location.href = `${BASE}project-details.html?id=${encodeURIComponent(id)}`;
+      window.location.href = `/project-details/?id=${encodeURIComponent(id)}`;
     };
     el.addEventListener("click", open);
     el.addEventListener("keydown", (e) => {
@@ -1120,7 +1219,7 @@ function renderProjectDetails() {
       "@type": "CreativeWork",
       name: p.title,
       description: `${p.category}. ${p.scope}`,
-      url: `${baseUrl}/project-details.html?id=${encodeURIComponent(p.id)}`,
+      url: `${baseUrl}/project-details/?id=${encodeURIComponent(p.id)}`,
       image: imgs,
       provider: {
         "@type": "Organization",
@@ -1144,8 +1243,8 @@ function renderProjectDetails() {
           <div class="h1 blur-on-scroll" data-reveal>${p.title}</div>
           <p class="lead" data-reveal>${p.scope}</p>
           <div class="hero-actions" data-reveal>
-            <a class="btn primary" href="${BASE}contact.html">Build a similar space <span class="icon">→</span></a>
-            <a class="btn" href="${BASE}projects.html">Back to projects <span class="icon">↘</span></a>
+            <a class="btn primary" href="/contact/">Build a similar space <span class="icon">→</span></a>
+            <a class="btn" href="/projects/">Back to projects <span class="icon">↘</span></a>
           </div>
         </div>
         <aside class="glass" data-reveal>
@@ -1175,7 +1274,7 @@ function renderProjectDetails() {
           <div class="card" data-reveal>
             <div class="project-thumb">
               <span class="badge">Preview</span>
-              <img src="${p.cover}" alt="${p.title} preview" loading="lazy" decoding="async" />
+              <img src="${absPath(p.cover)}" alt="${p.title} preview" loading="lazy" decoding="async" />
             </div>
             <div class="in">
               <h3>Execution scope</h3>
@@ -1215,8 +1314,8 @@ function renderProjectDetails() {
                 </div>
               </div>
               <div class="hero-actions" style="margin-top: 14px">
-                <a class="btn primary" href="${BASE}contact.html">Request a quotation <span class="icon">→</span></a>
-                <a class="btn" href="${BASE}services.html">Explore services <span class="icon">↗</span></a>
+                <a class="btn primary" href="/contact/">Request a quotation <span class="icon">→</span></a>
+                <a class="btn" href="/services/">Explore services <span class="icon">↗</span></a>
               </div>
             </div>
           </div>
@@ -1269,7 +1368,7 @@ function renderProjectDetails() {
                   .map(
                     (src, i) => `
                       <div class="showcase-media-item${i === 0 ? " is-active" : ""}" data-showcase-media>
-                        <img src="${src}" alt="${p.title} scene ${i + 1}" loading="lazy" decoding="async" data-parallax="0.16" />
+                        <img src="${absPath(src)}" alt="${p.title} scene ${i + 1}" loading="lazy" decoding="async" data-parallax="0.16" />
                       </div>
                     `
                   )
@@ -1300,8 +1399,8 @@ function renderProjectDetails() {
                         <h3>${n.t}</h3>
                         <p>${n.d}</p>
                         <div class="hero-actions" style="margin-top: 14px">
-                          <a class="btn primary" href="${BASE}contact.html">Discuss this style <span class="icon">→</span></a>
-                          <a class="btn" href="${BASE}projects.html">More projects <span class="icon">↗</span></a>
+                          <a class="btn primary" href="/contact/">Discuss this style <span class="icon">→</span></a>
+                          <a class="btn" href="/projects/">More projects <span class="icon">↗</span></a>
                         </div>
                       </div>
                     </article>
@@ -1334,7 +1433,7 @@ function renderProjectDetails() {
                       <article class="card project-card" data-tilt data-id="${x.id}" tabindex="0" role="link" aria-label="${x.title}">
                         <div class="project-thumb">
                           <span class="badge">${x.category}</span>
-                          <img src="${x.cover}" alt="${x.title}" loading="lazy" decoding="async" />
+                          <img src="${absPath(x.cover)}" alt="${x.title}" loading="lazy" decoding="async" />
                         </div>
                         <div class="in">
                           <h3>${x.title}</h3>
@@ -1395,8 +1494,8 @@ function renderServiceDetails() {
           <div class="h1 blur-on-scroll" data-reveal>${s.title}</div>
           <p class="lead" data-reveal>${s.summary}</p>
           <div class="hero-actions" data-reveal>
-            <a class="btn primary" href="${BASE}contact.html">Start a project <span class="icon">→</span></a>
-            <a class="btn" href="${BASE}services.html">All services <span class="icon">↘</span></a>
+            <a class="btn primary" href="/contact/">Start a project <span class="icon">→</span></a>
+            <a class="btn" href="/services/">All services <span class="icon">↘</span></a>
           </div>
         </div>
         <aside class="glass" data-reveal>
@@ -1442,7 +1541,7 @@ function renderServiceDetails() {
           <div class="card" data-reveal>
             <div class="project-thumb">
               <span class="badge">Cinematic</span>
-              <img src="../${s.banner}" alt="${s.title} banner" loading="lazy" decoding="async" />
+              <img src="${absPath(s.banner)}" alt="${s.title} banner" loading="lazy" decoding="async" />
             </div>
             <div class="in">
               <h3>Feature set</h3>
@@ -1477,8 +1576,8 @@ function renderIndustries() {
             <h3>${i.title}</h3>
             <p>${i.summary}</p>
             <div class="hero-actions" style="margin-top: 12px">
-              <a class="btn" href="projects.html">View relevant work <span class="icon">↗</span></a>
-              <a class="btn primary" href="contact.html">Enquire <span class="icon">→</span></a>
+              <a class="btn" href="/projects/">View relevant work <span class="icon">↗</span></a>
+              <a class="btn primary" href="/contact/">Enquire <span class="icon">→</span></a>
             </div>
           </div>
         </article>
@@ -1543,7 +1642,7 @@ function renderCareers() {
             </div>
             <div class="hero-actions" style="margin-top: 14px">
               <a class="btn primary" href="mailto:${content.brand.email}?subject=${encodeURIComponent(`Career — ${c.title}`)}">Apply <span class="icon">→</span></a>
-              <a class="btn" href="contact.html">Contact HR <span class="icon">↗</span></a>
+              <a class="btn" href="/contact/">Contact HR <span class="icon">↗</span></a>
             </div>
           </div>
         </article>
@@ -1566,8 +1665,8 @@ function renderInsights() {
             <p>${p.summary}</p>
             <div class="chips">${tags}</div>
             <div class="hero-actions" style="margin-top: 14px">
-              <a class="btn primary" href="insight.html?slug=${encodeURIComponent(p.slug)}">Read <span class="icon">→</span></a>
-              <a class="btn" href="contact.html">Discuss a project <span class="icon">↗</span></a>
+              <a class="btn primary" href="/insight/?slug=${encodeURIComponent(p.slug)}">Read <span class="icon">→</span></a>
+              <a class="btn" href="/contact/">Discuss a project <span class="icon">↗</span></a>
             </div>
           </div>
         </article>
@@ -1610,8 +1709,8 @@ function renderInsightPost() {
           <h3>Next step</h3>
           <p>Send a brief and we’ll recommend the right service stack and delivery workflow.</p>
           <div class="hero-actions" style="margin-top: 14px">
-            <a class="btn primary" href="${BASE}contact.html">Request consultation <span class="icon">→</span></a>
-            <a class="btn" href="${BASE}insights.html">Back to insights <span class="icon">↘</span></a>
+            <a class="btn primary" href="/contact/">Request consultation <span class="icon">→</span></a>
+            <a class="btn" href="/insights/">Back to insights <span class="icon">↘</span></a>
           </div>
         </div>
       </div>
@@ -1672,10 +1771,11 @@ function renderGallery() {
   const stripEl = $("#galleryStrip");
 
   const items = content.gallery.map((g, i) => {
-    const src = g.src || "";
+    const raw = g.src || "";
+    const src = absPath(raw);
     const alt = g.alt || "Gallery";
-    const cat = src.includes("assets/portfolio/") ? "Projects" : "Studio";
-    const s = (src + alt)
+    const cat = normalizePath(raw).startsWith("assets/portfolio/") ? "Projects" : "Studio";
+    const s = (raw + alt)
       .split("")
       .reduce((a, ch) => (a * 33 + ch.charCodeAt(0)) % 997, i + 7);
     const variant = s % 10;

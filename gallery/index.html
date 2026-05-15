@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>Interactive Gallery — ONE 2 ONE DESIGN</title>
+    <meta
+      name="description"
+      content="Premium interactive gallery by ONE 2 ONE DESIGN: fullscreen image previews, cinematic transitions, and luxury UI."
+    />
+    <meta
+      name="keywords"
+      content="interior design gallery, office interiors, turnkey fit out, luxury interiors, ONE 2 ONE DESIGN, Mumbai, India"
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="author" content="ONE 2 ONE DESIGN" />
+    <meta name="application-name" content="ONE 2 ONE DESIGN" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="canonical" href="https://one2one.co.in/gallery/" />
+    <meta property="og:site_name" content="ONE 2 ONE DESIGN" />
+    <meta property="og:title" content="Interactive Gallery — ONE 2 ONE DESIGN" />
+    <meta
+      property="og:description"
+      content="Fullscreen previews with cinematic overlay and premium UX for interior design and turnkey fit-out references."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://one2one.co.in/gallery/" />
+    <meta property="og:image" content="https://one2one.co.in/assets/media/hero.webp" />
+    <meta property="og:locale" content="en_IN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Interactive Gallery — ONE 2 ONE DESIGN" />
+    <meta
+      name="twitter:description"
+      content="Premium interactive gallery: fullscreen previews, cinematic overlay and luxury UI."
+    />
+    <meta name="twitter:image" content="https://one2one.co.in/assets/media/hero.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" href="/logo.jpeg" />
+  </head>
+  <body data-page="gallery">
+    <a class="skip" href="#content">Skip to content</a>
+    <div class="top-progress" aria-hidden="true"><i></i></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="cursor-light" aria-hidden="true"></div>
+
+    <div class="preloader" id="preloader" role="status" aria-live="polite" aria-label="Loading experience">
+      <div class="preloader-inner">
+        <div class="preloader-top">
+          <div class="preloader-brand">ONE 2 ONE DESIGN</div>
+          <div class="preloader-meta">Loading</div>
+        </div>
+        <div class="preloader-bar" aria-hidden="true"><i id="preloaderBar"></i></div>
+        <div class="preloader-bottom">
+          <div class="preloader-line">Loading gallery • Preparing lightbox</div>
+          <div class="preloader-count"><span id="preloaderPct">0</span>%</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="siteHeader"></div>
+
+    <main id="content">
+      <section class="hero" aria-label="Gallery hero">
+        <div class="hero-bg" aria-hidden="true">
+          <canvas id="scene"></canvas>
+        </div>
+        <div class="wrap">
+          <div class="hero-grid">
+            <div>
+              <div class="kicker" data-reveal><i></i><span>Gallery</span></div>
+              <div class="h1 blur-on-scroll" data-reveal>Premium interactive gallery.</div>
+              <p class="lead" data-reveal>Fullscreen previews with cinematic overlay and keyboard navigation.</p>
+              <div class="hero-actions" data-reveal>
+                <a class="btn primary" href="#grid">Browse <span class="icon">→</span></a>
+                <a class="btn" href="/projects/">Projects <span class="icon">↘</span></a>
+                <a class="btn ghost" href="/contact/">Enquire <span class="icon">↗</span></a>
+              </div>
+            </div>
+            <aside class="glass" data-reveal>
+              <div class="in">
+                <div class="stats">
+                  <div class="stat"><b>Fullscreen</b><span>Immersive view</span></div>
+                  <div class="stat"><b>Keyboard</b><span>Arrow navigation</span></div>
+                  <div class="stat"><b>Optimized</b><span>WebP assets</span></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="grid" aria-labelledby="grid-title">
+        <div class="wrap">
+          <div class="eyebrow">
+            <div>
+              <h2 id="grid-title" data-reveal>Interactive Grid</h2>
+              <p data-reveal>Tap an image to enter cinematic fullscreen preview mode.</p>
+            </div>
+            <div class="rule" aria-hidden="true"></div>
+          </div>
+
+          <div class="slider gallery-strip" data-slider data-reveal aria-label="Featured gallery strip">
+            <div class="slider-track" id="galleryStrip"></div>
+            <div class="slider-controls" aria-hidden="true">
+              <button class="btn" type="button" data-prev>←</button>
+              <button class="btn" type="button" data-next>→</button>
+            </div>
+          </div>
+
+          <div class="gallery-toolbar" data-reveal>
+            <div class="filters" id="galleryFilters" aria-label="Gallery filters"></div>
+            <div class="filters" id="galleryViews" aria-label="Gallery view"></div>
+            <div class="gallery-count" id="galleryCount" aria-live="polite"></div>
+          </div>
+          <div class="gallery" id="galleryGrid"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <div class="lightbox-panel" role="dialog" aria-modal="true" aria-label="Image preview">
+        <div class="lightbox-top">
+          <div class="lightbox-title" id="lightboxTitle">Gallery</div>
+          <div style="display:flex; gap:10px; align-items:center">
+            <button class="btn" id="lightboxPrev" type="button">Prev <span class="icon">←</span></button>
+            <button class="btn" id="lightboxNext" type="button">Next <span class="icon">→</span></button>
+            <button class="x" id="lightboxClose" type="button" aria-label="Close">✕</button>
+          </div>
+        </div>
+        <div class="lightbox-media">
+          <img id="lightboxImg" alt="Gallery image" decoding="async" />
+        </div>
+        <div class="lightbox-bottom">
+          <div class="lightbox-meta">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+            <div class="lightbox-count" id="lightboxCount"></div>
+          </div>
+          <div class="lightbox-thumbs" id="lightboxThumbs" aria-label="Thumbnail strip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="siteFooter"></div>
+
+    <script src="/assets/content.js" defer></script>
+    <script src="/assets/app.js" defer></script>
+  </body>
+</html>

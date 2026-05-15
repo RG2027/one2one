@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>Page not found — ONE 2 ONE DESIGN</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="refresh" content="2; url=/" />
+    <link rel="canonical" href="https://one2one.co.in/404.html" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" href="/logo.jpeg" />
+  </head>
+  <body>
+    <main style="min-height: 100vh; display: grid; place-items: center; padding: 26px">
+      <section class="card" style="max-width: 720px; width: 100%">
+        <div class="in" style="display: grid; gap: 12px">
+          <div class="kicker"><i></i><span>404</span></div>
+          <h1 style="margin: 0">Page not found</h1>
+          <p style="margin: 0">
+            The URL you opened doesn’t exist. Redirecting to the home page.
+          </p>
+          <div class="hero-actions" style="margin-top: 10px">
+            <a class="btn primary" href="/">Go to Home <span class="icon">→</span></a>
+            <a class="btn" href="/services/">Services <span class="icon">↗</span></a>
+            <a class="btn ghost" href="/contact/">Contact <span class="icon">↘</span></a>
+          </div>
+          <p style="margin: 0; color: rgba(255, 255, 255, 0.62); font-size: 12px; line-height: 1.7">
+            <span id="missingUrl"></span>
+          </p>
+        </div>
+      </section>
+    </main>
+    <script>
+      (function () {
+        var el = document.getElementById("missingUrl");
+        if (el) el.textContent = "Missing URL: " + window.location.href;
+        window.setTimeout(function () {
+          window.location.replace("/");
+        }, 900);
+      })();
+    </script>
+  </body>
+</html>
