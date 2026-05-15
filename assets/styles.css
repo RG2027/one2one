@@ -1896,9 +1896,11 @@ main {
 }
 
 .showcase-card {
+  position: relative;
+  isolation: isolate;
   border-radius: var(--radius2);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.22);
   overflow: hidden;
   transform: translate3d(0, 0, 0);
   transition: transform 320ms ease, border-color 320ms ease, background 320ms ease;
@@ -1907,15 +1909,52 @@ main {
   align-items: end;
 }
 
+.showcase-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--showcase-card-bg, none);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.34;
+  filter: saturate(1.08) contrast(1.06);
+  transform: scale(1.02);
+}
+
+.showcase-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(700px 520px at 20% 20%, rgba(223, 191, 79, 0.14), transparent 60%),
+    radial-gradient(700px 520px at 80% 70%, rgba(160, 175, 210, 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.54));
+  pointer-events: none;
+}
+
+.showcase-card .in {
+  position: relative;
+  z-index: 1;
+}
+
 .showcase-card:hover {
   transform: translateY(-2px);
   border-color: rgba(223, 191, 79, 0.22);
   background: rgba(255, 255, 255, 0.045);
 }
 
+.showcase-card:hover::before {
+  opacity: 0.44;
+}
+
 .showcase-card.is-active {
   border-color: rgba(223, 191, 79, 0.26);
   box-shadow: 0 0 0 1px rgba(223, 191, 79, 0.08), 0 22px 70px rgba(0, 0, 0, 0.45);
+}
+
+.showcase-card.is-active::before {
+  opacity: 0.48;
 }
 
 .showcase-card .top {
